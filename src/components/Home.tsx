@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import heroImage from "../image/lovely-teenage-girl-with-curly-hair-posing-yellow-tshirt-min 1.png";
 import iconImage from "../image/icon 2.png";
+import { apiUrl } from "../appConfig";
 
 function isTokenExpired(token: string): boolean {
   try {
@@ -50,7 +51,7 @@ function Home() {
       setUserName(null);
       return;
     }
-    fetch("http://127.0.0.1:8000/auth/me", {
+    fetch(apiUrl("/auth/me"), {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : null))

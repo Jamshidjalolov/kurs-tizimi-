@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
+import { API_BASE_URL, firebaseAuthorizedDomainsHint } from "../appConfig";
 
 const heroImage =
   "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1200&auto=format&fit=crop";
@@ -29,7 +30,7 @@ function Register() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const apiBase = "http://127.0.0.1:8000";
+  const apiBase = API_BASE_URL;
 
   const getAuthCode = (err: unknown) => {
     return typeof err === "object" && err && "code" in err
@@ -50,7 +51,7 @@ function Register() {
       case "auth/cancelled-popup-request":
         return "Popup bekor qilindi. Qayta urinib ko'ring.";
       case "auth/unauthorized-domain":
-        return "Firebase Auth > Settings > Authorized domains ga 127.0.0.1 va localhost qo'shing.";
+        return `Firebase Auth > Settings > Authorized domains ga ${firebaseAuthorizedDomainsHint()} ni qo'shing.`;
       case "auth/operation-not-allowed":
         return "Firebase'da Google sign-in yoqilmagan.";
       default:

@@ -10,6 +10,7 @@ import CoursesViewing from "./CoursesViewing";
 import NewsletterFooter from "./NewsletterFooter";
 import type { Course } from "../types/course";
 import { coursesSeed } from "../data/courses";
+import { apiUrl } from "../appConfig";
 
 function Courses() {
   const [userName, setUserName] = useState<string | null>(null);
@@ -98,7 +99,7 @@ function Courses() {
       setCurrentUser(null);
       return;
     }
-    fetch("http://127.0.0.1:8000/auth/me", {
+    fetch(apiUrl("/auth/me"), {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -122,7 +123,7 @@ function Courses() {
   }, []);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/courses/categories")
+    fetch(apiUrl("/courses/categories"))
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         if (Array.isArray(data) && data.length) {
@@ -135,7 +136,7 @@ function Courses() {
   useEffect(() => {
     setLoadingAll(true);
     const token = localStorage.getItem("access_token");
-    fetch("http://127.0.0.1:8000/courses", {
+    fetch(apiUrl("/courses"), {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -188,7 +189,7 @@ function Courses() {
     setLoadingCategory(true);
     const token = localStorage.getItem("access_token");
     fetch(
-      `http://127.0.0.1:8000/courses?category=${encodeURIComponent(
+      `${apiUrl("/courses")}?category=${encodeURIComponent(
         activeCategory
       )}`,
       {
@@ -295,7 +296,7 @@ function Courses() {
     const token = localStorage.getItem("access_token");
     if (!token || !isTeacher) return;
     try {
-      const res = await fetch("http://127.0.0.1:8000/notifications", {
+      const res = await fetch(apiUrl("/notifications"), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
@@ -324,7 +325,7 @@ function Courses() {
     if (!token) return;
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/notifications/${id}/read`,
+        apiUrl(`/notifications/${id}/read`),
         {
           method: "PUT",
           headers: { Authorization: `Bearer ${token}` },
@@ -343,7 +344,7 @@ function Courses() {
     const token = localStorage.getItem("access_token");
     if (!token) return;
     try {
-      const res = await fetch("http://127.0.0.1:8000/notifications/read-all", {
+      const res = await fetch(apiUrl("/notifications/read-all"), {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -371,7 +372,7 @@ function Courses() {
     setReplySending(true);
     try {
       let res = await fetch(
-        `http://127.0.0.1:8000/lessons/${note.lessonId}/teacher/messages`,
+        apiUrl(`/lessons/${note.lessonId}/teacher/messages`),
         {
           method: "POST",
           headers: {
@@ -383,7 +384,7 @@ function Courses() {
       );
       if (!res.ok && res.status == 404) {
         res = await fetch(
-          `http://127.0.0.1:8000/lessons/${note.lessonId}/messages`,
+          apiUrl(`/lessons/${note.lessonId}/messages`),
           {
             method: "POST",
             headers: {

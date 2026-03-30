@@ -23,6 +23,7 @@ import type {
 } from "../types/course";
 import { coursesSeed } from "../data/courses";
 import { auth, db } from "../firebase";
+import { apiUrl, resolveBackendAssetUrl, wsUrl } from "../appConfig";
 
 const tabs = [
   "Overview",
@@ -363,9 +364,7 @@ function normalizeUploadedFileUrl(rawUrl: unknown): string | undefined {
   if (typeof rawUrl !== "string") return undefined;
   const trimmed = rawUrl.trim();
   if (!trimmed) return undefined;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  if (trimmed.startsWith("/")) return `http://127.0.0.1:8000${trimmed}`;
-  return `http://127.0.0.1:8000/${trimmed}`;
+  return resolveBackendAssetUrl(trimmed);
 }
 
 const DIRECT_ATTACHMENT_PREFIX = "__DIRECT_ATTACHMENT__";
@@ -729,7 +728,7 @@ function CourseDetail() {
     }
     setLoading(true);
     const token = localStorage.getItem("access_token");
-    fetch(`http://127.0.0.1:8000/courses/${courseId}`, {
+    fetch(apiUrl(`/courses/${courseId}`), {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -784,7 +783,7 @@ function CourseDetail() {
       setCurrentUser(null);
       return;
     }
-    fetch("http://127.0.0.1:8000/auth/me", {
+    fetch(apiUrl("/auth/me"), {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -853,7 +852,7 @@ function CourseDetail() {
     let cancelled = false;
     setLessonLoading(true);
     const token = localStorage.getItem("access_token");
-    fetch(`http://127.0.0.1:8000/lessons/${activeLesson.id}`, {
+    fetch(apiUrl(`/lessons/${activeLesson.id}`), {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -1089,7 +1088,7 @@ function CourseDetail() {
     setPurchaseLoading(true);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/payments/checkout/${course.id}`,
+        apiUrl(`/payments/checkout/${course.id}`),
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
@@ -1097,7 +1096,7 @@ function CourseDetail() {
       );
       if (res.ok) {
         const refreshed = await fetch(
-          `http://127.0.0.1:8000/courses/${course.id}`,
+          apiUrl(`/courses/${course.id}`),
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -1184,7 +1183,7 @@ function CourseDetail() {
 
     if (!firebaseAuthPromiseRef.current) {
       firebaseAuthPromiseRef.current = (async () => {
-        const res = await fetch("http://127.0.0.1:8000/auth/firebase/custom-token", {
+        const res = await fetch(apiUrl("/auth/firebase/custom-token"), {
           method: "POST",
           headers: { Authorization: `Bearer ${apiToken}` },
         });
@@ -1216,8 +1215,8 @@ function CourseDetail() {
   ): Promise<LessonMessage | null> => {
     const primaryEndpoint =
       sender === "teacher"
-        ? `http://127.0.0.1:8000/lessons/${lessonId}/teacher/messages`
-        : `http://127.0.0.1:8000/lessons/${lessonId}/messages`;
+        ? apiUrl(`/lessons/${lessonId}/teacher/messages`)
+        : apiUrl(`/lessons/${lessonId}/messages`);
     let res = await fetch(primaryEndpoint, {
       method: "POST",
       headers: {
@@ -1235,7 +1234,7 @@ function CourseDetail() {
       }),
     });
     if (!res.ok && sender === "teacher" && res.status === 404) {
-      res = await fetch(`http://127.0.0.1:8000/lessons/${lessonId}/messages`, {
+      res = await fetch(apiUrl(`/lessons/${lessonId}/messages`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1279,7 +1278,7 @@ function CourseDetail() {
       try {
         const token = localStorage.getItem("access_token");
         if (!token) return [];
-        const res = await fetch(`http://127.0.0.1:8000/lessons/${lessonId}/messages`, {
+        const res = await fetch(apiUrl(`/lessons/${lessonId}/messages`), {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) return [];
@@ -1530,7 +1529,7 @@ function CourseDetail() {
     setChatUploading(true);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/lessons/${lessonId}/messages/upload`,
+        apiUrl(`/lessons/${lessonId}/messages/upload`),
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
@@ -1632,7 +1631,7 @@ function CourseDetail() {
   const fetchCourseRating = async () => {
     if (!courseId) return;
     const token = localStorage.getItem("access_token");
-    const res = await fetch(`http://127.0.0.1:8000/courses/${courseId}/ratings`, {
+    const res = await fetch(apiUrl(`/courses/${courseId}/ratings`), {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
     if (!res.ok) return;
@@ -1648,7 +1647,7 @@ function CourseDetail() {
     if (!teacherName) return;
     const token = localStorage.getItem("access_token");
     const res = await fetch(
-      `http://127.0.0.1:8000/teachers/${encodeURIComponent(teacherName)}/ratings`,
+      apiUrl(`/teachers/${encodeURIComponent(teacherName)}/ratings`),
       {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       }
@@ -1670,7 +1669,7 @@ function CourseDetail() {
     setRatingBusy(true);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/courses/${courseId}/ratings`,
+        apiUrl(`/courses/${courseId}/ratings`),
         {
           method: "POST",
           headers: {
@@ -1707,7 +1706,7 @@ function CourseDetail() {
     setRatingBusy(true);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/teachers/${encodeURIComponent(course.instructor)}/ratings`,
+        apiUrl(`/teachers/${encodeURIComponent(course.instructor)}/ratings`),
         {
           method: "POST",
           headers: {
@@ -1767,7 +1766,7 @@ function CourseDetail() {
       try {
         const token = localStorage.getItem("access_token");
         const res = await fetch(
-          `http://127.0.0.1:8000/lessons/${activeLesson.id}/assignments`,
+          apiUrl(`/lessons/${activeLesson.id}/assignments`),
           {
             headers: token ? { Authorization: `Bearer ${token}` } : undefined,
           }
@@ -1892,9 +1891,9 @@ function CourseDetail() {
       setAssignmentRealtimeStatus("connecting");
 
       const socket = new WebSocket(
-        `ws://127.0.0.1:8000/ws/lessons/${activeLesson.id}/assignments?token=${encodeURIComponent(
+        wsUrl(`/ws/lessons/${activeLesson.id}/assignments?token=${encodeURIComponent(
           token
-        )}`
+        )}`)
       );
       assignmentSocketRef.current = socket;
 
@@ -2093,7 +2092,7 @@ function CourseDetail() {
       const formData = new FormData();
       formData.append("file", file);
       const res = await fetch(
-        `http://127.0.0.1:8000/assignments/${assignmentId}/upload-image`,
+        apiUrl(`/assignments/${assignmentId}/upload-image`),
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
@@ -2301,7 +2300,7 @@ function CourseDetail() {
         const token = ensureAuthToken();
         if (!token) return;
         const res = await fetch(
-          `http://127.0.0.1:8000/lessons/${activeLesson.id}/messages/${message.id}`,
+          apiUrl(`/lessons/${activeLesson.id}/messages/${message.id}`),
           {
             method: "PUT",
             headers: {
@@ -2335,7 +2334,7 @@ function CourseDetail() {
         const token = ensureAuthToken();
         if (!token) return;
         const res = await fetch(
-          `http://127.0.0.1:8000/lessons/${activeLesson.id}/messages/${message.id}`,
+          apiUrl(`/lessons/${activeLesson.id}/messages/${message.id}`),
           {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },
@@ -2390,7 +2389,7 @@ function CourseDetail() {
     const token = localStorage.getItem("access_token");
     if (!token) return null;
     try {
-      const res = await fetch(`http://127.0.0.1:8000/private-chats/${chatId}/messages`, {
+      const res = await fetch(apiUrl(`/private-chats/${chatId}/messages`), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
@@ -2474,7 +2473,7 @@ function CourseDetail() {
     setDirectLoading(true);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/lessons/${activeLesson.id}/private-chats`,
+        apiUrl(`/lessons/${activeLesson.id}/private-chats`),
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -2520,7 +2519,7 @@ function CourseDetail() {
       }
       const query = params.toString();
       const res = await fetch(
-        `http://127.0.0.1:8000/lessons/${activeLesson.id}/private-chat/me?${query}`,
+        apiUrl(`/lessons/${activeLesson.id}/private-chat/me?${query}`),
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -2556,7 +2555,7 @@ function CourseDetail() {
     setDirectLoading(true);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/lessons/${lessonId}/private-chats/${studentId}/open`,
+        apiUrl(`/lessons/${lessonId}/private-chats/${studentId}/open`),
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
@@ -2662,11 +2661,11 @@ function CourseDetail() {
       if (lessonIdForUpload) {
         // Avval lesson upload route ni sinaymiz: ko'p eski backendlarda shu mavjud.
         uploadTargets.push(
-          `http://127.0.0.1:8000/lessons/${lessonIdForUpload}/messages/upload`
+          apiUrl(`/lessons/${lessonIdForUpload}/messages/upload`)
         );
       }
       uploadTargets.push(
-        `http://127.0.0.1:8000/private-chats/${chatId}/messages/upload`
+        apiUrl(`/private-chats/${chatId}/messages/upload`)
       );
 
       for (let idx = 0; idx < uploadTargets.length; idx += 1) {
@@ -2894,7 +2893,7 @@ function CourseDetail() {
         attachmentForContent &&
           (attachmentForContent.kind === "sticker" || attachmentForContent.url)
       );
-      const res = await fetch(`http://127.0.0.1:8000/private-chats/${chatId}/messages`, {
+      const res = await fetch(apiUrl(`/private-chats/${chatId}/messages`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2953,7 +2952,7 @@ function CourseDetail() {
     setDirectSending(true);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/private-chats/${chatId}/messages`,
+        apiUrl(`/private-chats/${chatId}/messages`),
         {
           method: "DELETE",
           headers: {
@@ -3061,7 +3060,7 @@ function CourseDetail() {
     setAssignmentError("");
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/lessons/${activeLesson.id}/assignments/bulk`,
+        apiUrl(`/lessons/${activeLesson.id}/assignments/bulk`),
         {
           method: "POST",
           headers: {
@@ -3129,7 +3128,7 @@ function CourseDetail() {
     setAssignmentError("");
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/assignments/${assignmentId}/submit`,
+        apiUrl(`/assignments/${assignmentId}/submit`),
         {
           method: "POST",
           headers: {
@@ -3181,7 +3180,7 @@ function CourseDetail() {
     }
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/assignments/${assignmentId}/submissions`,
+        apiUrl(`/assignments/${assignmentId}/submissions`),
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) {
@@ -3282,7 +3281,7 @@ function CourseDetail() {
     setAssignmentError("");
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/submissions/${submissionId}/grade`,
+        apiUrl(`/submissions/${submissionId}/grade`),
         {
           method: "POST",
           headers: {
@@ -3335,7 +3334,7 @@ function CourseDetail() {
     const token = localStorage.getItem("access_token");
     if (!token || !isTeacher) return;
     try {
-      const res = await fetch("http://127.0.0.1:8000/notifications", {
+      const res = await fetch(apiUrl("/notifications"), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
@@ -3365,7 +3364,7 @@ function CourseDetail() {
     if (!token) return;
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/notifications/${id}/read`,
+        apiUrl(`/notifications/${id}/read`),
         {
           method: "PUT",
           headers: { Authorization: `Bearer ${token}` },
@@ -3384,7 +3383,7 @@ function CourseDetail() {
     const token = localStorage.getItem("access_token");
     if (!token) return;
     try {
-      const res = await fetch("http://127.0.0.1:8000/notifications/read-all", {
+      const res = await fetch(apiUrl("/notifications/read-all"), {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -3697,11 +3696,12 @@ function CourseDetail() {
     let cancelled = false;
 
     const connect = () => {
-      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
       const socket = new WebSocket(
-        `${protocol}://127.0.0.1:8000/ws/lessons/${activeLesson.id}/private-threads?token=${encodeURIComponent(
-          token
-        )}`
+        wsUrl(
+          `/ws/lessons/${activeLesson.id}/private-threads?token=${encodeURIComponent(
+            token
+          )}`
+        )
       );
       directThreadSocketRef.current = socket;
 
@@ -3807,11 +3807,12 @@ function CourseDetail() {
     let cancelled = false;
 
     const connect = () => {
-      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
       const socket = new WebSocket(
-        `${protocol}://127.0.0.1:8000/ws/private-chats/${directWsChatId}?token=${encodeURIComponent(
-          token
-        )}`
+        wsUrl(
+          `/ws/private-chats/${directWsChatId}?token=${encodeURIComponent(
+            token
+          )}`
+        )
       );
       directSocketRef.current = socket;
 

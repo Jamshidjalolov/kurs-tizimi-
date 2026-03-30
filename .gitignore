@@ -30,3 +30,7 @@ backend/venv
 backend/.secrets/
 backend/uvicorn*.err
 backend/uvicorn*.log
+__pycache__/
+backend/uploads/
+src/components.zip
+src/*.css.map

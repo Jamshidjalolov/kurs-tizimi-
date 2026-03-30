@@ -5,6 +5,7 @@ from pathlib import Path
 from uuid import uuid4
 import hashlib
 import hmac
+import os
 import secrets
 import smtplib
 import requests
@@ -108,12 +109,20 @@ CHAT_UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
 
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_ROOT)), name="uploads")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+
+def get_frontend_origins() -> list[str]:
+    raw = os.getenv("FRONTEND_ORIGINS", "")
+    origins = [item.strip() for item in raw.split(",") if item.strip()]
+    if origins:
+        return origins
+    return [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-    ],
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_frontend_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
