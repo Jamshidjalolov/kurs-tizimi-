@@ -8,7 +8,11 @@ import {
   signOut,
 } from "firebase/auth";
 import type { User } from "firebase/auth";
-import { auth, googleProvider } from "../firebase";
+import {
+  auth,
+  FIREBASE_AUTH_ENABLED,
+  googleProvider,
+} from "../firebase";
 import { API_BASE_URL, firebaseAuthorizedDomainsHint } from "../appConfig";
 
 const heroImage =
@@ -83,7 +87,9 @@ function Login() {
       setSuccess(
         "Emailga tasdiqlash havolasi yuborildi. Havolani bosib, qayta kirish qiling."
       );
-      await signOut(auth);
+      if (auth) {
+        await signOut(auth);
+      }
       return;
     }
     const token = await user.getIdToken();
@@ -98,6 +104,7 @@ function Login() {
   };
 
   useEffect(() => {
+    if (!auth) return;
     let mounted = true;
     const finalizeRedirect = async () => {
       const result = await getRedirectResult(auth);
@@ -200,6 +207,10 @@ function Login() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!FIREBASE_AUTH_ENABLED || !auth || !googleProvider) {
+      setError("Google login uchun Firebase env o'rnatilmagan.");
+      return;
+    }
     setError("");
     setSuccess("");
     setLoading(true);

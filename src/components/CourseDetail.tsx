@@ -22,7 +22,7 @@ import type {
   AssignmentSubmission,
 } from "../types/course";
 import { coursesSeed } from "../data/courses";
-import { auth, db } from "../firebase";
+import { auth, db, FIREBASE_DB_ENABLED } from "../firebase";
 import { apiUrl, resolveBackendAssetUrl, wsUrl } from "../appConfig";
 
 const tabs = [
@@ -562,9 +562,11 @@ function CourseDetail() {
   const [directStickerOpen, setDirectStickerOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const [chatTransport, setChatTransport] = useState<"firebase" | "backend">(
-    "firebase"
+    FIREBASE_DB_ENABLED ? "firebase" : "backend"
   );
-  const [firebaseRealtimeEnabled, setFirebaseRealtimeEnabled] = useState(true);
+  const [firebaseRealtimeEnabled, setFirebaseRealtimeEnabled] = useState(
+    FIREBASE_DB_ENABLED
+  );
   const [, setChatError] = useState("");
   const [directThreads, setDirectThreads] = useState<DirectChatThread[]>([]);
   const [activeDirectChatId, setActiveDirectChatId] = useState<number | null>(null);
@@ -1177,6 +1179,9 @@ function CourseDetail() {
     `${sender}-${userId ?? "anon"}`;
 
   const ensureFirebaseUser = async () => {
+    if (!FIREBASE_DB_ENABLED) {
+      throw new Error("Firebase deploy config missing");
+    }
     if (auth.currentUser) return auth.currentUser;
     const apiToken = localStorage.getItem("access_token");
     if (!apiToken) return null;
@@ -1333,7 +1338,14 @@ function CourseDetail() {
       setChatError("");
       return true;
     } catch (error) {
-      if (isFirebaseDnsError(error)) {
+      if (
+        error instanceof Error &&
+        error.message.toLowerCase().includes("firebase deploy config missing")
+      ) {
+        disableFirebaseRealtime(
+          "Firebase sozlanmagan. Chat backend rejimida ishlaydi."
+        );
+      } else if (isFirebaseDnsError(error)) {
         disableFirebaseRealtime(
           "Firebase host topilmadi. Chat backend rejimida ishlaydi."
         );
@@ -3590,7 +3602,14 @@ function CourseDetail() {
     };
     start().catch((error) => {
       if (cancelled) return;
-      if (isFirebaseDnsError(error)) {
+      if (
+        error instanceof Error &&
+        error.message.toLowerCase().includes("firebase deploy config missing")
+      ) {
+        disableFirebaseRealtime(
+          "Firebase sozlanmagan. Backend chat avtomatik yoqildi."
+        );
+      } else if (isFirebaseDnsError(error)) {
         disableFirebaseRealtime(
           "Firebase host topilmadi. Backend chat avtomatik yoqildi."
         );

@@ -1,5 +1,3 @@
-const FALLBACK_API_BASE_URL = "http://127.0.0.1:8000";
-
 function trimTrailingSlash(value: string): string {
   return value.replace(/\/+$/, "");
 }
@@ -16,8 +14,21 @@ function toWebSocketOrigin(value: string): string {
   return value.replace(/^http/i, "ws");
 }
 
+function inferDefaultApiBaseUrl(): string {
+  if (typeof window === "undefined") {
+    return "http://127.0.0.1:8000";
+  }
+
+  const { hostname, origin } = window.location;
+  if (hostname === "127.0.0.1" || hostname === "localhost") {
+    return "http://127.0.0.1:8000";
+  }
+
+  return origin;
+}
+
 export const API_BASE_URL = trimTrailingSlash(
-  import.meta.env.VITE_API_BASE_URL?.trim() || FALLBACK_API_BASE_URL
+  import.meta.env.VITE_API_BASE_URL?.trim() || inferDefaultApiBaseUrl()
 );
 
 export const WS_BASE_URL = trimTrailingSlash(
